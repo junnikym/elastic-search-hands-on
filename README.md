@@ -61,3 +61,166 @@ docker run -e ES_JAVA_OPTS="-Xms1g -Xmx1g" ...
 > 
 > 만약 초기 설정까지 완료하였다면 왼쪽 메뉴 중 Management > Dev Tools 로 이동하여 사용이 가능하다.
 
+ElasticSearch 에서는 도큐먼트별로 고유한 URL을 갖는다. 
+7 버전 이상에서는 `<index>/_doc/<document id>` 와 같은 구조이며 6.x 버전 이전은 `<index>/<document type>/<document id>` 와 같은 구조를 가진다.
+
+### Create & Update
+`POST` Method 를 사용하여 데이터를 추가 할 수 있다. `<index>/_doc/<document id>` 형태의 url 로 아래와 같이 json 형태의 데이터를 함깨 보내면 
+데이터를 정한다. 만약 뒤에 Document Id 를 생략하면 자동으로 생성하여 Response 로 반환해준다.
+```http request
+POST this_is_index/_doc
+{
+  "this_is_key": "create data",
+  "test": "create data like this"
+}
+```
+```http response
+{
+  "_index": "this_is_index",
+  "_id": "d-58a4cBR_iNTmD8WHEW",
+  "_version": 1,
+  "result": "created",
+  "_shards": {
+    "total": 2,
+    "successful": 1,
+    "failed": 0
+  },
+  "_seq_no": 5,
+  "_primary_term": 1
+}
+```
+
+위에서 생성된 데이터를 수정하려면 `_update`를 사용하면된다. `<index>/_update/<document id>` 형태로 POST 요청을 보냄으로써 수정을 요청 할 수 있다.
+수정 또는 추가하고자 하는 내용을 `doc`에 넣으면 Document Id 에 해당하는 값이 바뀐다. 추가적으로 결과 값을 보면 수정 횟수에 따라 _version 이 카운팅 된다.
+```http request
+POST this_is_index/_update/d-58a4cBR_iNTmD8WHEW
+{
+  "doc": {
+    "this_is_key": "this_is_value",
+    "info": {
+      "name":"Junny Kym",
+      "message":"Hello, ElasticSearch!"
+    }
+  }
+}
+```
+```http response
+{
+  "_index": "this_is_index",
+  "_id": "d-58a4cBR_iNTmD8WHEW",
+  "_version": 2,
+  "result": "updated",
+  "_shards": {
+    "total": 2,
+    "successful": 1,
+    "failed": 0
+  },
+  "_seq_no": 14,
+  "_primary_term": 1
+}
+```
+
+`POST` Method 외 `PUT` Method 또한 데이터 삽입, 수정이 가능하다. 
+단, `PUT` 으로 데이터 생성 할 때는 Document Id 자동생성이 안되며, 
+`POST` 에서는 `_update` 를 사용할 수 있었지만 `PUT` 에서는 `_create` 를 통해 데이터를 생성하는 기능이 존재한다. 
+
+`PUT` 에서는 아래와 같은 URL 이 삽입, 수정 기능 둘 다 제공한다.
+```http request
+PUT foo/_doc/1
+{
+  "this_is_key": "this_is_value",
+}
+```
+```http response
+{
+  "_index": "foo",
+  "_id": "3",
+  "_version": 2,
+  "result": "updated",
+  "_shards": {
+    "total": 2,
+    "successful": 1,
+    "failed": 0
+  },
+  "_seq_no": 1,
+  "_primary_term": 1
+}
+```
+
+아래와 같이 `_create`를 사용해서 데이터를 생성 할 수도 있다. 다만, 같은 Document Id 가 존재한다면 409 conflict 에러가 발생한다. 
+```http request
+PUT foo/_create/2
+{
+  "this_is_key": "this_is_not_value",
+}
+```
+```http response
+{
+  "_index": "foo",
+  "_id": "2",
+  "_version": 1,
+  "result": "created",
+  "_shards": {
+    "total": 2,
+    "successful": 1,
+    "failed": 0
+  },
+  "_seq_no": 3,
+  "_primary_term": 1
+}
+```
+
+### Read
+앞써 생성한 데이터를 조회하고 싶다면 `GET` 형태로 아래와 같이 요청을 보내면 된다.
+```http request
+GET this_is_index/_doc/d-58a4cBR_iNTmD8WHEW
+```
+```http response
+{
+  "_index": "this_is_index",
+  "_id": "d-58a4cBR_iNTmD8WHEW",
+  "_version": 2,
+  "_seq_no": 14,
+  "_primary_term": 1,
+  "found": true,
+  "_source": {
+    "this_is_key": "this_is_value",
+    "test": "create data like this",
+    "info": {
+      "name": "Junny Kym",
+      "message": "Hello, ElasticSearch!"
+    }
+  }
+}
+```
+
+### Delete
+삭제 또한 간단하다. `DELETE` 형태의 요청을 보냄으로써 데이터를 삭제 할 수 있다. 
+다만, 뒤에 Doucment Id 를 붙이지 않으면 전체 삭제, 붙이면 특정 데이터를 삭제한다.
+```http request
+DELETE this_is_index/_doc/d-58a4cBR_iNTmD8WHEW
+```
+```http response
+{
+  "_index": "this_is_index",
+  "_id": "d-58a4cBR_iNTmD8WHEW",
+  "_version": 2,
+  "result": "deleted",
+  "_shards": {
+    "total": 2,
+    "successful": 1,
+    "failed": 0
+  },
+  "_seq_no": 15,
+  "_primary_term": 1
+}
+```
+또는 아래와 같이 전체삭제를 할 수 있다.
+```http request
+DELETE this_is_index
+```
+```http response
+{
+  "acknowledged": true
+}
+```
