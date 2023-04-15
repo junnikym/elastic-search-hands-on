@@ -224,3 +224,49 @@ DELETE this_is_index
   "acknowledged": true
 }
 ```
+
+### Bulk
+
+ElasticSearch 는 bulk 작업을 수행하기 위한 API 를 제공한다. `POST _bulk` 를 통해 사용가능하며, 
+`index`, `create`, `update`, `delete` 동작을 수행 할 수 있다. 
+각 동작들은 아래와 같이 `{ <동작> : { <부가정보>... } }` 와 같은 형태로 사용한다.
+
+`index` 는 create, update 작업을 수행하며, 
+만약 `create` 를 사용하면 update 를 사용하지 못하고 `update` 를 사용하게되면 create 를 하지 못한다.
+따라서 아래 요청을 보내면 마지막 Update 는 id 가 1 인 Document 가 존재하지 않기 때문에 
+결과 값으로 `error: true` 와 Document 를 찾지 못했다는 메시지가 전달된다.
+
+```http request
+POST _bulk
+{"index": {"_index": "test-index","_id": 0}}
+{"field": "this is field data"}
+{"index": {"_index": "test-index","_id": 0}}
+{"field": "this is changed field data"}
+{"delete": {"_index": "test-index","_id": 0}}
+{"create": {"_index": "test-index","_id": 0}}
+{"field": "this is recreated field"}
+{"update": {"_index": "test-index","_id": 1}}
+{"doc":{"field":"this is updated field"}}
+```
+
+> Bulk API 를 사용할 때 주의할 점은 아래와 같이 여러줄에 걸쳐 입력할 경우 API 가 작동하지 않는다.
+> 그렇기 때문에 위와 같이 json 을 한줄로 입력해주어야한다.
+> ```http request
+>  POST _bulk
+> {
+>     "index": {
+>         "_index": "test-index",
+>         "_id": 0
+>     }
+> }
+> {
+>     "field": "this is field data"
+> }
+> ...
+> ```
+> ```http response
+> 500 - Internal Server Error
+> ...
+> JsonEOFException
+> ```
+
