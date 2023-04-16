@@ -270,3 +270,115 @@ POST _bulk
 > JsonEOFException
 > ```
 
+## Search 
+
+ElasticSearch 는 데이터 검색을 위해 검색어인 `Term` 으로 분석 과정을 거쳐 저장된다. 
+따라서 대소문자, 단수, 복수, 원형 여부와 상관없이 검색 가능하며 이를 `Full Text Search` 라고한다. 
+
+> Query DSL <sub>Domain Specific Language</sub>   
+> ElasticSearch 에서 검색을 위한 쿼리 기능.
+
+검색 기능은 `GET <index>/_search` 에 요청을 보내 검색 쿼리를 사용할 수 있으며, 아래와 같은 형태로 사용 할 수 있다.
+```http request
+GET <index>/_search
+{
+    "query": {
+        쿼리 내용 ...
+    }
+}
+```
+
+Full Text Query 는 `match_all`, `match`, `match_phrase` 가 있다.
+
+### match_all
+match_all 은 인덱스의 모든 도큐먼트를 검색할 때 사용한다. 
+아래와 같이 body 를 작성하여 검색 할 수도 있으며, 
+body 를 생략하여 `GET <index>/_search` 를 홀출하였을 때 match_all 로 검색이 된다.
+
+```json
+{
+    "query": {
+        "match_all": {}
+    }
+}
+```
+
+### match
+match 는 full text query 에 사용되는 가장 일반적인 쿼리이며, 아래와 같이 사용 할 수 있다.
+
+```json
+{
+    "query": {
+        "match": {
+            "message": {
+                "query": "<검색 내용>",
+                "operator": "and"  
+            }
+        }
+    }
+}
+```
+
+`query` 의 값을 통해 검색을 한다. `operator` 에 `or 또는 and` 를 지정할 수 있다.
+
+만약 operator 에 or 조건을 지정하였다면 query 에 들어간 단어 중 하나만 포함되어도 검색된다. 
+반대로 and 조건을 지정하면 query 에 들어간 모든 단어가 포함되어야 검색이 된다.
+
+여기서 검색된 얼마나 연관성이 있냐에 따라 Document 는 Score 가 매겨지는데 Score 가 높은순으로 결과값이 매겨진다.
+
+operator 는 생략 할 수 있는데, 생략 시 default 로 or 조건으로 검색하게 된다.   
+만약 operator 를 생략 할 시, 단순 operator 값을 없애도 되지만 아래와 같이 `message: <검색 내용>` 형태로 입력해도 API 가 작동한다.
+
+```json
+{
+    "query": {
+        "match": {
+            "message": "<검색 내용>"
+        }
+    }
+}
+```
+
+### match_phrase 
+match 를 사용하여 "Hello elastic search" 을 AND 조건으로 검색하면 "Search Elastic Hello" 와 같이 순서가 반대로 되어도 붙어있기만 하면 검색이 된다.
+만약 순서까지 고려하여 검색을 하고싶다면 `match_phrase` 를 사용하면 된다.
+
+```json
+{
+    "query": {
+        "match_phrase": {
+            "message": "<검색 내용>",
+        }
+    }
+}
+```
+
+match_phrase 검색에는 `slop` 라는 옵션을 제공하는데 이는 검색 내용 중간에 n개의 단어가 들어갈 수 있도록 하용해주는 것이다.
+만약 slop 를 2 로 지정하여 "Hello elastic search" 를 검색하였다면, "Hello, This is Elastic Search" 와 같은 결과값도 얻을 수 있다.
+
+```json
+{
+    "query": {
+        "match_phrase": {
+            "message": "<검색 내용>",
+            "slop": 1
+        }
+    }
+}
+```
+
+### query_string
+query_string 를 사용하여 위 내용을 좀 더 복잡하게 조합 할 수 있다.   
+
+아래와 같이 `AND`, `OR` 키워드를 사용하여 조건을 넣을 수 있으며, `\"<검색 내용>\"` 과 같은 형식으로 match_phrase 를 사용 할 수 있다. 
+
+````json
+{
+    "query": {
+        "query_string": {
+            "default_field": "message",
+            "query": "(hello OR bye) AND (elastic OR \"elastic search\")"
+        }
+    }
+}
+````
