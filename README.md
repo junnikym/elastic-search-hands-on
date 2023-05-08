@@ -11,6 +11,21 @@ ElasticSearch 는 뛰어난 검색 능력과 대규모 분산 시스템, 쉬운 
 이 외에도 RESTFul API 를 통해 데이터 조회, 입력, 삭제 등..을 처리하며, 멀티테넌시 환경을 가지고 있다.
 Index 라는 논리적인 집합 단위로 구성되어 분산 저장되기 때문에 별도의 커넥션 없이 하나의 질의로 묶어 검색하고, 하나의 출력으로 도출 할 수 있다.
 
+## Inverted Index
+문서에서 검색의 될 만한 것들의 존재여부와 위치를 미리 추출하여 빠른 검색을 할 수 있도록 하는 것을 색인 <sub>Forward Index</sub> 이라 한다. 
+반면, <b>역색인 <sub>Inverted Index</sub></b> 은 검색될 만한 단어에서 어떤 문서에서 등장했는지 기록하여 단어를 통해 검색하는 방식이다.
+
+ ** 위에서 등장한 `검색될 만한 단어` 는 Elastic Search 에서 `Term` 이라 부른다. 
+
+![Forward Index and Inverted Index](images/forward_index_and_inverted_index.png)   
+<sup> <https://www.researchgate.net/figure/The-geographic-scopes-inverted-index-The-inverted-index-is-used-for-fast-document_fig3_266863129> </sup>
+
+RDBMS 에서 텍스트로 데이터를 검색하기 위해 LIKE 연산을 사용한다. 
+이때, 모든 데이터를 순회하며 패턴 매칭을 시도하여 매칭이 된 데이터만 추출될 것이다. 
+이러한 방식은 빠른 검색을 요하는 검색엔진에는 적합하지 않다. 
+그렇기 때문에 Elasitc Search 에서는 역색인 방식을 채택하여, 
+모든 데이터를 순회하지 않고도 특정 키워드에 대한 문서를 빠르게 찾을 수 있도록 하였다.
+
 ## Install with Docker
 ElasticSearch Docker 이미지는 [공식 홈페이지](https://www.docker.elastic.co/r/elasticsearch)에서 배포하고 있으며 
 [가이드](https://github.com/elastic/elasticsearch)도 제공해주고 있다. 
