@@ -26,6 +26,16 @@ RDBMS 에서 텍스트로 데이터를 검색하기 위해 LIKE 연산을 사용
 그렇기 때문에 Elasitc Search 에서는 역색인 방식을 채택하여, 
 모든 데이터를 순회하지 않고도 특정 키워드에 대한 문서를 빠르게 찾을 수 있도록 하였다.
 
+Elastic Search 에서 Token 이 저장되기 위해서는 `Analyzer` 에서 `Text Analysis` 라고하는 과정을 거친다.
+Text Analysis 에서 이루어지는 작업은 이렇다.
+
+첫번째로 `Character Filter` 를 걸쳐 문장에서 특정 문자를 대치하거나 제거한다. 
+이후, `Tokenizer` 를 걸쳐 문장을 Term 단위로 잘라낸다.
+이렇게 생긴 Term 은 `Token Filter` 를 걸쳐 소문자 변환, 불용어 제거 등.. 의 가공이 이루어진다.
+
+![analysis chain](images/analysis-chain.png)   
+<sup> <https://www.elastic.co/guide/en/elasticsearch/client/net-api/7.17/writing-analyzers.html> </sup>
+
 ## Install with Docker
 ElasticSearch Docker 이미지는 [공식 홈페이지](https://www.docker.elastic.co/r/elasticsearch)에서 배포하고 있으며 
 [가이드](https://github.com/elastic/elasticsearch)도 제공해주고 있다. 
